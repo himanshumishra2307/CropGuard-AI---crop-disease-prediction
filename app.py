@@ -7,6 +7,24 @@ from PIL import Image
 from flask_cors import CORS
 import os
 import gdown
+import sys
+
+# -------------------------
+# AUTO-DOWNLOAD MODEL BEFORE ANYTHING ELSE
+# -------------------------
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "crop_model.pth")
+GDRIVE_FILE_ID = "1DmE_vgvmos42TV2toPhpDCjR7PgH9ClO"
+
+if not os.path.exists(MODEL_PATH):
+    print("⬇️ Downloading model from Google Drive...", flush=True)
+    url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+    gdown.download(url, MODEL_PATH, quiet=False)
+    if not os.path.exists(MODEL_PATH):
+        print("❌ Model download failed! Exiting.", flush=True)
+        sys.exit(1)
+    print("✅ Model downloaded successfully!", flush=True)
+else:
+    print("✅ Model already exists locally.", flush=True)
 
 app = Flask(__name__)
 CORS(app)
@@ -96,20 +114,6 @@ disease_info = {
 }
 
 # -------------------------
-# AUTO-DOWNLOAD MODEL FROM GOOGLE DRIVE
-# -------------------------
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "crop_model.pth")
-GDRIVE_FILE_ID = "1DmE_vgvmos42TV2toPhpDCjR7PgH9ClO"
-
-if not os.path.exists(MODEL_PATH):
-    print("⬇️ Downloading model from Google Drive...")
-    url = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
-    gdown.download(url, MODEL_PATH, quiet=False)
-    print("✅ Model downloaded!")
-else:
-    print("✅ Model already exists locally.")
-
-# -------------------------
 # LOAD MODEL
 # -------------------------
 model = models.resnet18(weights=None)
@@ -126,9 +130,10 @@ try:
             model.load_state_dict(checkpoint)
     else:
         model.load_state_dict(checkpoint)
-    print(f"✅ Model loaded! ({len(classes)} classes)")
+    print(f"✅ Model loaded! ({len(classes)} classes)", flush=True)
 except Exception as e:
-    print(f"⚠️ Model load error: {e}")
+    print(f"❌ Model load error: {e}", flush=True)
+    sys.exit(1)
 
 model.eval()
 
@@ -138,7 +143,6 @@ model.eval()
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor()
-    # No Normalize — matches original training pipeline
 ])
 
 # -------------------------
@@ -147,6 +151,10 @@ transform = transforms.Compose([
 @app.route("/")
 def home():
     return render_template("index.html")
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok", "classes": len(classes)})
 
 @app.route("/predict", methods=["POST"])
 def predict():
