@@ -339,7 +339,7 @@
   </div>
   <div class="nav-pills">
     <span class="nav-pill">ResNet-18</span>
-    <span class="nav-pill">15 Classes</span>
+    <span class="nav-pill">8 Classes</span>
     <span class="nav-pill">PlantVillage</span>
   </div>
 </nav>
@@ -413,26 +413,15 @@
   <!-- RIGHT: Classes -->
   <div>
     <div class="card classes-card">
-      <div class="section-label">🌾 Detectable Diseases (15 Classes)</div>
+      <div class="section-label">🌾 Detectable Diseases (8 Classes)</div>
 
       <div class="plant-group">
         <div class="plant-name">🫑 Pepper Bell</div>
         <div class="disease-chip"><span class="chip-dot dot-bacterial"></span>Bacterial Spot</div>
-        <div class="disease-chip"><span class="chip-dot dot-none"></span>Healthy</div>
-      </div>
-
-      <div class="plant-group">
-        <div class="plant-name">🥔 Potato</div>
-        <div class="disease-chip"><span class="chip-dot dot-fungal"></span>Early Blight</div>
-        <div class="disease-chip"><span class="chip-dot dot-fungal"></span>Late Blight</div>
-        <div class="disease-chip"><span class="chip-dot dot-none"></span>Healthy</div>
       </div>
 
       <div class="plant-group">
         <div class="plant-name">🍅 Tomato</div>
-        <div class="disease-chip"><span class="chip-dot dot-bacterial"></span>Bacterial Spot</div>
-        <div class="disease-chip"><span class="chip-dot dot-fungal"></span>Early Blight</div>
-        <div class="disease-chip"><span class="chip-dot dot-fungal"></span>Late Blight</div>
         <div class="disease-chip"><span class="chip-dot dot-fungal"></span>Leaf Mold</div>
         <div class="disease-chip"><span class="chip-dot dot-fungal"></span>Septoria Leaf Spot</div>
         <div class="disease-chip"><span class="chip-dot dot-pest"></span>Spider Mites (Two-spotted)</div>
@@ -518,7 +507,10 @@
 
     try {
       const res = await fetch('/predict', { method:'POST', body:formData });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch(e) { throw new Error('Server is still loading the model. Please wait 30 seconds and try again.'); }
       if (data.error) throw new Error(data.error);
 
       document.getElementById('result-emoji').textContent = data.emoji || '🌿';
